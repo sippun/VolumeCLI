@@ -20,3 +20,4 @@ C:\Users\Joel\Dev\projects\VolumeCLI\obj\Debug\net9.0\refint\VolumeCLI.dll
 C:\Users\Joel\Dev\projects\VolumeCLI\obj\Debug\net9.0\VolumeCLI.pdb
 C:\Users\Joel\Dev\projects\VolumeCLI\obj\Debug\net9.0\VolumeCLI.genruntimeconfig.cache
 C:\Users\Joel\Dev\projects\VolumeCLI\obj\Debug\net9.0\ref\VolumeCLI.dll
+C:\Users\Joel\Dev\projects\VolumeCLI\obj\Debug\net9.0\VolumeCLI.sourcelink.json

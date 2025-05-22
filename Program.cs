@@ -1,17 +1,32 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
+using System.Runtime.InteropServices;
 using NAudio.CoreAudioApi;
 
 class Program
 {
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    private const int SW_RESTORE = 9;
+
+    [DllImport("user32.dll")]
+    private static extern void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
+    private const byte VK_MEDIA_PLAY_PAUSE = 0xB3;
+
     static void Main(string[] args)
     {
         while (true)
         {
             ShowSessions();
 
-            Console.WriteLine("\nPress a key:");
-            Console.WriteLine("  [m] Mute | [u] Unmute | [s] Set Volume | [r] Refresh | [q] Quit");
+            Console.WriteLine("");
+            Console.WriteLine("Spotify controls: [p] Play/Pause | [n] Next | [b] Previous");
+            Console.WriteLine("Session controls: [m] Mute/Unmute | [s] Set Volume");
+            Console.WriteLine("General:          [r] Refresh | [q] Quit ");
 
             var key = Console.ReadKey(intercept: true).Key;
 
@@ -23,6 +38,15 @@ class Program
                 case ConsoleKey.S:
                     SetVolume();
                     break;
+                case ConsoleKey.P:
+                    SendSpotifyCommand(AppCommand.PlayPause);
+                    break;
+                case ConsoleKey.N:
+                    SendSpotifyCommand(AppCommand.NextTrack);
+                    break;
+                case ConsoleKey.B:
+                    SendSpotifyCommand(AppCommand.PreviousTrack);
+                    break;
                 case ConsoleKey.R:
                     continue; // Just refresh the screen
                 case ConsoleKey.Q:
@@ -32,6 +56,11 @@ class Program
                     break;
             }
         }
+    }
+
+    static void SendSpotifyCommand(AppCommand command)
+    {
+        bool success = AppCommandSender.Send("Spotify", command);
     }
 
     static void ShowSessions()
@@ -65,7 +94,7 @@ class Program
     static void MuteOrUnmute()
     {
         var sessions = GetCurrentSessions();
-        Console.Write($"\nEnter session number to toggle mute");
+        Console.Write($"\nEnter session number to toggle mute: ");
         if (int.TryParse(Console.ReadLine(), out int index) && index >= 0 && index < sessions.Count)
         {
             try
