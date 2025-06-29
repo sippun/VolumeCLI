@@ -21,23 +21,29 @@ class Program
     {
         while (true)
         {
+            var sessions = GetCurrentSessions();
             ShowSessions();
 
             Console.WriteLine("");
+            Console.WriteLine("Session controls: Press a number to select a session");
             Console.WriteLine("Spotify controls: [p] Play/Pause | [n] Next | [b] Previous");
-            Console.WriteLine("Session controls: [m] Mute/Unmute | [s] Set Volume");
-            Console.WriteLine("General:          [r] Refresh | [q] Quit ");
+            Console.WriteLine("General:          [r] Refresh | [q] Quit\n");
 
-            var key = Console.ReadKey(intercept: true).Key;
+            var keyInfo = Console.ReadKey(intercept: true);
+            char input = keyInfo.KeyChar;
 
-            switch (key)
+            if (char.IsDigit(input))
             {
-                case ConsoleKey.M:
-                    MuteOrUnmute();
-                    break;
-                case ConsoleKey.S:
-                    SetVolume();
-                    break;
+                int sessionIndex = int.Parse(input.ToString());
+                if (sessionIndex >= 0 && sessionIndex < sessions.Count)
+                {
+                    ControlSessionLoop(sessions[sessionIndex]);
+                    continue;
+                }
+            }
+
+            switch (keyInfo.Key)
+            {
                 case ConsoleKey.P:
                     SendSpotifyCommand(AppCommand.PlayPause);
                     break;
@@ -53,6 +59,48 @@ class Program
                     return; // Exit program
                 default:
                     Console.WriteLine("Invalid key.");
+                    break;
+            }
+        }
+    }
+
+    static void ControlSessionLoop(AudioSessionControl session)
+    {
+        while (true)
+        {
+            Console.Clear();
+            var procName = session.DisplayName;
+            var vol = session.SimpleAudioVolume.Volume;
+            var muted = session.SimpleAudioVolume.Mute;
+            Console.WriteLine(
+                $"Selected Session: {procName} | Volume: {(int)(vol * 100)}% | Muted: {muted}");
+            Console.WriteLine("\nControls:");
+            Console.WriteLine("[m] Mute/Unmute");
+            Console.WriteLine("[v] Set Volume");
+            Console.WriteLine("[r] Return to session list\n");
+
+            var key = Console.ReadKey(intercept: true).Key;
+
+            switch (key)
+            {
+                case ConsoleKey.M:
+                    session.SimpleAudioVolume.Mute = !session.SimpleAudioVolume.Mute;
+                    break;
+                case ConsoleKey.V:
+                    Console.Write("Enter new volume (0-100): ");
+                    if (float.TryParse(Console.ReadLine(), out float percent) && percent >= 0 && percent <= 100)
+                        session.SimpleAudioVolume.Volume = percent / 100f;
+                    else
+                    {
+                        Console.WriteLine("Invalid volume. Press any key...");
+                        Console.ReadKey(intercept: true);
+                    }
+                    break;
+                case ConsoleKey.R:
+                    return;
+                default:
+                    Console.WriteLine("Invalid key. Press any key...");
+                    Console.ReadKey(intercept: true);
                     break;
             }
         }
@@ -88,57 +136,6 @@ class Program
             var isMuted = session.SimpleAudioVolume.Mute;
 
             Console.WriteLine($"[{i}] {processName,-20} | Volume: {(int)(volume * 100)}% | Muted: {isMuted}");
-        }
-    }
-
-    static void MuteOrUnmute()
-    {
-        var sessions = GetCurrentSessions();
-        Console.Write($"\nEnter session number to toggle mute: ");
-        if (int.TryParse(Console.ReadLine(), out int index) && index >= 0 && index < sessions.Count)
-        {
-            try
-            {
-                var mute = sessions[index].SimpleAudioVolume.Mute;
-                sessions[index].SimpleAudioVolume.Mute = !mute;
-                Console.WriteLine(mute ? "Unmuted." : "Muted.");
-            }
-            catch
-            {
-                Console.WriteLine("Failed to change mute state.");
-            }
-        }
-        else
-        {
-            Console.WriteLine("Invalid session index.");
-        }
-    }
-
-    static void SetVolume()
-    {
-        var sessions = GetCurrentSessions();
-        Console.Write("\nEnter session number to set volume: ");
-        if (!int.TryParse(Console.ReadLine(), out int index) || index < 0 || index >= sessions.Count)
-        {
-            Console.WriteLine("Invalid session index.");
-            return;
-        }
-
-        Console.Write("Enter new volume (0–100): ");
-        if (!float.TryParse(Console.ReadLine(), out float percent) || percent < 0 || percent > 100)
-        {
-            Console.WriteLine("Invalid volume.");
-            return;
-        }
-
-        try
-        {
-            sessions[index].SimpleAudioVolume.Volume = percent / 100f;
-            Console.WriteLine($"Volume set to {percent}%.");
-        }
-        catch
-        {
-            Console.WriteLine("Failed to set volume.");
         }
     }
 
